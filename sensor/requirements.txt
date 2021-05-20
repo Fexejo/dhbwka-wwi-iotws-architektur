@@ -3,3 +3,4 @@
 # C-Quellcodes nicht kompiilert werden können.
 
 redis
+smbus2

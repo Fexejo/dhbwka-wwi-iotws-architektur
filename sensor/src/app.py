@@ -1,11 +1,13 @@
 #! /bin/env python
 
 import redis
-import configparser, logging, pprint, os, random, sys, time
+from smbus2 import SMBus
+import configparser, logging, pprint, os, random, sys, time, math
 
 REDIS_KEY_MEASUREMENT_INTERVAL = "measurement:interval"
-REDIS_KEY_MEASUREMENT_ENABLED  = "measurement:enabled"
-REDIS_KEY_MEASUREMENT_VALUES   = "measurement:values"
+REDIS_KEY_MEASUREMENT_ENABLED = "measurement:enabled"
+REDIS_KEY_MEASUREMENT_VALUES = "measurement:values"
+
 
 class App:
     """
@@ -24,7 +26,7 @@ class App:
         # Logger konfigurieren
         self._logger = logging.getLogger()
         self._logger.setLevel(logging.INFO)
-    
+
         formatter = logging.Formatter("[%(asctime)s] %(message)s")
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
@@ -41,17 +43,23 @@ class App:
         redis_config = {
             "host": os.getenv("REDIS_HOST") or self._config["redis"]["host"],
             "port": os.getenv("REDIS_PORT") or self._config["redis"]["port"],
-            "db":   os.getenv("REDIS_DB")   or self._config["redis"]["db"],
+            "db": os.getenv("REDIS_DB") or self._config["redis"]["db"],
         }
 
         redis_config["port"] = int(redis_config["port"])
-        redis_config["db"]   = int(redis_config["db"])
+        redis_config["db"] = int(redis_config["db"])
 
-        self._logger.info("Stelle Verbindung zu Redis her: host=%(host)s, port=%(port)s, db=%(db)s" % redis_config)
+        self._logger.info(
+            "Stelle Verbindung zu Redis her: host=%(host)s, port=%(port)s, db=%(db)s"
+            % redis_config
+        )
         self._redis = redis.Redis(decode_responses=True, **redis_config)
 
         # Voreingestelltes Messintervall
-        self._interval_seconds = float(os.getenv("INTERVAL_SECONDS") or self._config["measurement"]["interval_seconds"])
+        self._interval_seconds = float(
+            os.getenv("INTERVAL_SECONDS")
+            or self._config["measurement"]["interval_seconds"]
+        )
         self._enabled = True
 
     def main(self):
@@ -83,10 +91,12 @@ class App:
             return self._enabled
 
         enabled = enabled != "0"
-        
+
         if not enabled == self._enabled:
             self._enabled = enabled
-            self._logger.info("Messung wird fortgeführt" if enabled else "Messung wird unterbrochen")
+            self._logger.info(
+                "Messung wird fortgeführt" if enabled else "Messung wird unterbrochen"
+            )
 
         return enabled
 
@@ -106,22 +116,74 @@ class App:
         if not interval_seconds == self._interval_seconds:
             self._interval_seconds = interval_seconds
             self._logger.info("Neues Messintervall: %s Sekunde(n)" % interval_seconds)
-        
+
         return interval_seconds
 
     def _perform_mesaurement(self):
-        """
-        Misst einen neuen Sensorwert und gibt ihn zurück. Diese Methode muss am
-        besten so angepasst werden, dass alle Sensoren ausgelesen und das Ergebnis
-        als Dictionary zurückgegeben wird. Das Dictionariy wird dann in der Methode
-        `save_measurement()` unverändert in Redis gespeichert.
-        """
         self._logger.info("Starte neue Messung")
 
-        # Beispiel: Wir "messen" eine Zufallszahl. :-)
-        return {
-            "random": random.randint(1, 99)
+        # Beispiel: Wir messen Beschleunigung und Rotation des Sensors.
+        # Register
+        power_mgmt_1 = 0x6B
+        power_mgmt_2 = 0x6C
+
+        def read_byte(reg):
+            return bus.read_byte_data(address, reg)
+
+        def read_word(reg):
+            h = bus.read_byte_data(address, reg)
+            l = bus.read_byte_data(address, reg + 1)
+            value = (h << 8) + l
+            return value
+
+        def read_word_2c(reg):
+            val = read_word(reg)
+            if val >= 0x8000:
+                return -((65535 - val) + 1)
+            else:
+                return val
+
+        def dist(a, b):
+            return math.sqrt((a * a) + (b * b))
+
+        def get_y_rotation(x, y, z):
+            radians = math.atan2(x, dist(y, z))
+            return -math.degrees(radians)
+
+        def get_x_rotation(x, y, z):
+            radians = math.atan2(y, dist(x, z))
+            return math.degrees(radians)
+
+        bus = smbus.SMBus(1)  # bus = smbus.SMBus(0) fuer Revision 1
+        address = 0x68  # via i2cdetect
+
+        # Aktivieren, um das Modul ansprechen zu koennen
+        bus.write_byte_data(address, power_mgmt_1, 0)
+
+        # Beschleunigungs- und Rotationsmessungen auslesen
+        gyroskop_xout = read_word_2c(0x43)
+        gyroskop_yout = read_word_2c(0x45)
+        gyroskop_zout = read_word_2c(0x47)
+
+        beschleunigung_xout = read_word_2c(0x3B)
+        beschleunigung_yout = read_word_2c(0x3D)
+        beschleunigung_zout = read_word_2c(0x3F)
+
+        beschleunigung_xout_skaliert = beschleunigung_xout / 16384.0
+        beschleunigung_yout_skaliert = beschleunigung_yout / 16384.0
+        beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
+
+        # Werte in Dictionary speichern
+        reading = {
+            "X_acceleration": beschleunigung_xout_skaliert,
+            "Y_acceleration": beschleunigung_yout_skaliert,
+            "Z_acceleration": beschleunigung_zout_skaliert,
+            "X_rotation": gyroskop_xout,
+            "Y_rotation": gyroskop_yout,
+            "Z_rotation": gyroskop_zout,
         }
+
+        return reading
 
     def _save_measurement(self, measurement):
         """
@@ -131,6 +193,7 @@ class App:
         """
         self._logger.info("Speichere Messwerte: %s" % self._pp.pformat(measurement))
         self._redis.xadd(REDIS_KEY_MEASUREMENT_VALUES, measurement)
+
 
 if __name__ == "__main__":
     configfile = "app.conf"

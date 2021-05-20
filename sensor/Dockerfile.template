@@ -5,9 +5,9 @@ FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-python:latest-run
 
 WORKDIR /usr/src/app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && install_packages i2c-tools
 
 COPY app.conf .
 COPY ./src .
 
-CMD ["python", "app.py"]
+CMD ["sh","-c", "modprobe i2c-dev && python app.py"]
