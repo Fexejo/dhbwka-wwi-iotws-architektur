@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt && install_packages i2c-tools
 COPY app.conf .
 COPY ./src .
 
-CMD ["sh","-c", "modprobe i2c-dev && python app.py"]
+CMD modprobe i2c-dev && python app.py
