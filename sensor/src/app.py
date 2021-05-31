@@ -154,7 +154,7 @@ class App:
             radians = math.atan2(y, dist(x, z))
             return math.degrees(radians)
 
-        bus = smbus.SMBus(1)  # bus = smbus.SMBus(0) fuer Revision 1
+        bus = SMBus(1)  # bus = smbus.SMBus(0) fuer Revision 1
         address = 0x68  # via i2cdetect
 
         # Aktivieren, um das Modul ansprechen zu koennen
