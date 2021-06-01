@@ -25,6 +25,8 @@ services:
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - REDIS_DB=0
+        labels:
+            io.balena.features.kernel-modules: '1'
     
     # Programm zur Auswertung des Start/Stop-Hardwarebuttons
     startstopbutton:
