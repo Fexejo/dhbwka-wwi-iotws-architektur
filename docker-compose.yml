@@ -29,16 +29,16 @@ services:
             io.balena.features.kernel-modules: '1'
     
     # Programm zur Auswertung des Start/Stop-Hardwarebuttons
-#    startstopbutton:
-#        build: startstopbutton/
-#        privileged: true
-#        restart: always
-#        depends_on:
-#            - redis
-#        environment:
-#            - REDIS_HOST=redis
-#            - REDIS_PORT=6379
-#            - REDIS_DB=0
+    startstopbutton:
+        build: startstopbutton/
+        privileged: true
+        restart: always
+        depends_on:
+            - redis
+        environment:
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+            - REDIS_DB=0
     
     # Programm zum öffentlichen Datenaustausch via MQTT
     mqtthandler:
@@ -54,19 +54,19 @@ services:
             io.balena.features.supervisor-api: '1'
     
     # Lokales Grafana-Dashbaord
-#    grafana:
-#        build: grafana/
-#        restart: always
-#        depends_on:
-#            - redis
-#        environment:
-#            - REDIS_HOST=redis
-#            - REDIS_PORT=6379
-#            - REDIS_DB=0
-#        volumes:
-#            - 'grafana-data:/var/lib/grafana'
-#        ports:
-#            - '80:3000'
+    grafana:
+        build: grafana/
+        restart: always
+        depends_on:
+            - redis
+        environment:
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+            - REDIS_DB=0
+        volumes:
+            - 'grafana-data:/var/lib/grafana'
+        ports:
+            - '80:3000'
 
 ## Vollständiges Beispiel aus der Balena-Dokumentation. Ggf. wichtig als Vorlage,
 ## falls der direkte Hardwarezugriff in einem der Container nicht funktioniert.
