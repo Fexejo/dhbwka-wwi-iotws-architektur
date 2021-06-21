@@ -29,16 +29,16 @@ services:
             io.balena.features.kernel-modules: '1'
     
     # Programm zur Auswertung des Start/Stop-Hardwarebuttons
-    startstopbutton:
-        build: startstopbutton/
-        privileged: true
-        restart: always
-        depends_on:
-            - redis
-        environment:
-            - REDIS_HOST=redis
-            - REDIS_PORT=6379
-            - REDIS_DB=0
+#    startstopbutton:
+#        build: startstopbutton/
+#        privileged: true
+#        restart: always
+#        depends_on:
+#            - redis
+#        environment:
+#            - REDIS_HOST=redis
+#            - REDIS_PORT=6379
+#            - REDIS_DB=0
     
     # Programm zum öffentlichen Datenaustausch via MQTT
     mqtthandler:
