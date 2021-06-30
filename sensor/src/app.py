@@ -70,8 +70,8 @@ class App:
         try:
             while True:
                 if self._is_measurement_enabled():
-                    mesaurement = self._perform_mesaurement()
-                    self._save_measurement(mesaurement)
+                    measurement = self._perform_measurement()
+                    self._save_measurement(measurement)
 
                 interval_seconds = self._read_measurement_interval()
                 time.sleep(interval_seconds)
@@ -119,7 +119,7 @@ class App:
 
         return interval_seconds
 
-    def _perform_mesaurement(self):
+    def _perform_measurement(self):
         self._logger.info("Starte neue Messung")
 
         # Beispiel: Wir messen Beschleunigung und Rotation des Sensors.
