@@ -157,24 +157,39 @@ class App:
         bus = SMBus(1)  # bus = smbus.SMBus(0) fuer Revision 1
         address = 0x68  # via i2cdetect
 
-        # Aktivieren, um das Modul ansprechen zu koennen
-        bus.write_byte_data(address, power_mgmt_1, 0)
+        try:
 
-        # Zeitpunkt der Messung speichern
-        messzeit = time.time()
+            # Aktivieren, um das Modul ansprechen zu koennen
+            bus.write_byte_data(address, power_mgmt_1, 0)
 
-        # Beschleunigungs- und Rotationsmessungen auslesen
-        gyroskop_xout = read_word_2c(0x43)
-        gyroskop_yout = read_word_2c(0x45)
-        gyroskop_zout = read_word_2c(0x47)
+            # Zeitpunkt der Messung speichern
+            messzeit = time.time()
 
-        beschleunigung_xout = read_word_2c(0x3B)
-        beschleunigung_yout = read_word_2c(0x3D)
-        beschleunigung_zout = read_word_2c(0x3F)
+            # Beschleunigungs- und Rotationsmessungen auslesen
+            gyroskop_xout = read_word_2c(0x43)
+            gyroskop_yout = read_word_2c(0x45)
+            gyroskop_zout = read_word_2c(0x47)
 
-        beschleunigung_xout_skaliert = beschleunigung_xout / 16384.0
-        beschleunigung_yout_skaliert = beschleunigung_yout / 16384.0
-        beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
+            beschleunigung_xout = read_word_2c(0x3B)
+            beschleunigung_yout = read_word_2c(0x3D)
+            beschleunigung_zout = read_word_2c(0x3F)
+
+            beschleunigung_xout_skaliert = beschleunigung_xout / 16384.0
+            beschleunigung_yout_skaliert = beschleunigung_yout / 16384.0
+            beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
+        except OSError:
+            self._logger.error("Sensor kann nicht ausgelesen werden.")
+            messzeit = time.time()
+
+            beschleunigung_xout_skaliert = 0.0
+            beschleunigung_yout_skaliert = 0.0
+            beschleunigung_zout_skaliert = 0.0
+
+            gyroskop_xout = 0
+            gyroskop_yout = 0
+            gyroskop_zout = 0
+
+
 
         # Werte in Dictionary speichern
         reading = {
