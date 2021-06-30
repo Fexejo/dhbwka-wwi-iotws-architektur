@@ -160,6 +160,9 @@ class App:
         # Aktivieren, um das Modul ansprechen zu koennen
         bus.write_byte_data(address, power_mgmt_1, 0)
 
+        # Zeitpunkt der Messung speichern
+        messzeit = time.time()
+
         # Beschleunigungs- und Rotationsmessungen auslesen
         gyroskop_xout = read_word_2c(0x43)
         gyroskop_yout = read_word_2c(0x45)
@@ -175,6 +178,7 @@ class App:
 
         # Werte in Dictionary speichern
         reading = {
+            "Timestamp": messzeit,
             "X_acceleration": beschleunigung_xout_skaliert,
             "Y_acceleration": beschleunigung_yout_skaliert,
             "Z_acceleration": beschleunigung_zout_skaliert,
