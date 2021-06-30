@@ -70,8 +70,8 @@ class App:
         try:
             while True:
                 if self._is_measurement_enabled():
-                    mesaurement = self._perform_mesaurement()
-                    self._save_measurement(mesaurement)
+                    measurement = self._perform_measurement()
+                    self._save_measurement(measurement)
 
                 interval_seconds = self._read_measurement_interval()
                 time.sleep(interval_seconds)
@@ -119,7 +119,7 @@ class App:
 
         return interval_seconds
 
-    def _perform_mesaurement(self):
+    def _perform_measurement(self):
         self._logger.info("Starte neue Messung")
 
         # Beispiel: Wir messen Beschleunigung und Rotation des Sensors.
@@ -157,24 +157,43 @@ class App:
         bus = SMBus(1)  # bus = smbus.SMBus(0) fuer Revision 1
         address = 0x68  # via i2cdetect
 
-        # Aktivieren, um das Modul ansprechen zu koennen
-        bus.write_byte_data(address, power_mgmt_1, 0)
+        try:
 
-        # Beschleunigungs- und Rotationsmessungen auslesen
-        gyroskop_xout = read_word_2c(0x43)
-        gyroskop_yout = read_word_2c(0x45)
-        gyroskop_zout = read_word_2c(0x47)
+            # Aktivieren, um das Modul ansprechen zu koennen
+            bus.write_byte_data(address, power_mgmt_1, 0)
 
-        beschleunigung_xout = read_word_2c(0x3B)
-        beschleunigung_yout = read_word_2c(0x3D)
-        beschleunigung_zout = read_word_2c(0x3F)
+            # Zeitpunkt der Messung speichern
+            messzeit = time.time()
 
-        beschleunigung_xout_skaliert = beschleunigung_xout / 16384.0
-        beschleunigung_yout_skaliert = beschleunigung_yout / 16384.0
-        beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
+            # Beschleunigungs- und Rotationsmessungen auslesen
+            gyroskop_xout = read_word_2c(0x43)
+            gyroskop_yout = read_word_2c(0x45)
+            gyroskop_zout = read_word_2c(0x47)
+
+            beschleunigung_xout = read_word_2c(0x3B)
+            beschleunigung_yout = read_word_2c(0x3D)
+            beschleunigung_zout = read_word_2c(0x3F)
+
+            beschleunigung_xout_skaliert = beschleunigung_xout / 16384.0
+            beschleunigung_yout_skaliert = beschleunigung_yout / 16384.0
+            beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
+        except OSError:
+            self._logger.error("Sensor kann nicht ausgelesen werden.")
+            messzeit = time.time()
+
+            beschleunigung_xout_skaliert = 0.0
+            beschleunigung_yout_skaliert = 0.0
+            beschleunigung_zout_skaliert = 0.0
+
+            gyroskop_xout = 0
+            gyroskop_yout = 0
+            gyroskop_zout = 0
+
+
 
         # Werte in Dictionary speichern
         reading = {
+            "Timestamp": messzeit,
             "X_acceleration": beschleunigung_xout_skaliert,
             "Y_acceleration": beschleunigung_yout_skaliert,
             "Z_acceleration": beschleunigung_zout_skaliert,
