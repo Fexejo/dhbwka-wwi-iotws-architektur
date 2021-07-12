@@ -127,6 +127,8 @@ class App:
         power_mgmt_1 = 0x6B
         power_mgmt_2 = 0x6C
 
+        # Die read_byte, read_word, read_word_2c funktionen sind notwendig, um Sensordaten aus dem 
+        # Sensor auszulesen.
         def read_byte(reg):
             return bus.read_byte_data(address, reg)
 
@@ -174,6 +176,7 @@ class App:
             beschleunigung_yout = read_word_2c(0x3D)
             beschleunigung_zout = read_word_2c(0x3F)
 
+            # Beschleunigungsdaten skalieren, um sinnvolle Ergebnisse anzuzeigen
             beschleunigung_xout_skaliert = beschleunigung_xout / 16384.0
             beschleunigung_yout_skaliert = beschleunigung_yout / 16384.0
             beschleunigung_zout_skaliert = beschleunigung_zout / 16384.0
@@ -202,6 +205,7 @@ class App:
             "Z_rotation": gyroskop_zout,
         }
 
+        # Rückgabe der Sensordaten an main()
         return reading
 
     def _save_measurement(self, measurement):

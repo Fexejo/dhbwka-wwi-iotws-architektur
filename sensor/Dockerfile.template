@@ -3,6 +3,7 @@ FROM balenalib/%%BALENA_MACHINE_NAME%%-debian-python:latest-run
 # Workaround, damit RPi.GPIO während der Installation kompiliert werden kann
 #RUN apt-get -y update; apt-get -y upgrade; apt-get -y install build-essential
 
+# I2C tools werden zur Ansteuerung des Sensors installiert
 RUN apt-get update; apt-get -y install i2c-tools
 
 WORKDIR /usr/src/app
@@ -12,4 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.conf .
 COPY ./src .
 
+# app.py wird ausgeführt, um Sensordaten auszulesen und weiterzuleiten
 CMD python app.py
